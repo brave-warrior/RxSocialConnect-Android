@@ -21,6 +21,8 @@ import android.net.Uri;
 import com.github.scribejava.core.oauth.OAuth20Service;
 
 import org.fuckboilerplate.rx_social_connect.internal.persistence.OAuth2AccessToken;
+import org.fuckboilerplate.rx_social_connect.query_string.QueryString;
+import org.fuckboilerplate.rx_social_connect.query_string.QueryStringStrategy;
 
 public final class OAuth2Service extends Service<OAuth2AccessToken, OAuth20Service> {
 
@@ -31,11 +33,14 @@ public final class OAuth2Service extends Service<OAuth2AccessToken, OAuth20Servi
     @Override public OAuth2AccessToken token(String url) throws Exception {
         Uri uri = Uri.parse(url);
 
-        String error = uri.getQueryParameter("error");
+        QueryStringStrategy strategy = QueryString.PARSER.getStrategyOAuth2();
+
+        String error = strategy.extractError(uri);
         if (error != null && !error.isEmpty()) throw new RuntimeException(error);
 
-        String code = uri.getQueryParameter("code");
-        return new OAuth2AccessToken(service.getAccessToken(code));
+        String code = strategy.extractCode(uri);
+        com.github.scribejava.core.model.OAuth2AccessToken accessToken = service.getAccessToken(code);
+        return new OAuth2AccessToken(accessToken);
     }
 
     @Override protected String authUrl() throws Exception {

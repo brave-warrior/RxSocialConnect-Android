@@ -16,7 +16,7 @@ RxSocialConnect.with(fragmentOrActivity, facebookService)
 ## Features:
 
 * Webview implementation to handle the sequent steps of oauth process.
-* Storage tokens locally.
+* Storage of tokens encrypted locally 
 * Automatic refreshing tokens taking care of expiration date. 
 * I/O operations performed on secondary threads and automatic sync with user interface on the main thread, thanks to [RxAndroid](https://github.com/ReactiveX/RxAndroid)  
 * Mayor social network supported, more than 16 providers; including Facebook, Twitter, GooglePlus, LinkedIn and so on. Indeed, it supports as many providers as [ScribeJava](https://github.com/scribejava/scribejava/tree/master/scribejava-apis/src/test/java/com/github/scribejava/apis/examples) does, because RxSocialConnect is a reactive-android wrapper around it.
@@ -37,31 +37,39 @@ allprojects {
 And add next dependencies in the build.gradle of android app module:
 ```gradle
 dependencies {
-    compile "com.github.FuckBoilerplate.RxSocialConnect-Android:core:0.0.8"
-    compile "io.reactivex:rxjava:1.1.5"
+    compile 'com.github.VictorAlbertos.RxSocialConnect-Android:core:1.0.0'
+    compile "io.reactivex:rxjava:1.2.1"
 }
 ```
 
 ## Usage
 Because RxSocialConnect uses RxActivityResult to deal with intent calls, all its requirements and features are inherited too.
 
-Before attempting to use RxSocialConnect, you need to call `RxSocialConnect.register` in your Android `Application` class, supplying as parameter the current instance, as long as an implementation of [JSONConverter](https://github.com/FuckBoilerplate/RxSocialConnect-Android/blob/master/core/src/main/java/org/fuckboilerplate/rx_social_connect/JSONConverter.java) interface.
+Before attempting to use RxSocialConnect, you need to call `RxSocialConnect.register` in your Android `Application` class, supplying as parameter the current instance and an encryption key in order to save the tokens on disk encrypted, as long as an implementation of [JSONConverter](https://github.com/FuckBoilerplate/RxSocialConnect-Android/blob/master/core/src/main/java/org/fuckboilerplate/rx_social_connect/JSONConverter.java) interface.
 
-Because RxSocialConnect requires a json converter to save on disk the tokens retrieved, you need to supply an implementation of `JSONConverter` interface, using whatever JSON libary you prefer. Or you can use the built-in implementation based on [gson](https://github.com/google/gson) library. In order to use this [GsonConverter](https://github.com/FuckBoilerplate/RxSocialConnect-Android/blob/master/gson_converter/src/main/java/io/victoralbertos/rx_social_connect/GsonConverter.java) class, you need to add the next dependency to gradle:
-
+Because RxSocialConnect uses internally [Jolyglot](https://github.com/VictorAlbertos/Jolyglot) to save on disk the tokens retrieved, you need to add one of the next dependency to gradle.
+ 
 ```gradle
 dependencies {
-    compile "com.github.FuckBoilerplate.RxSocialConnect-Android:gson_converter:0.0.7"
+    // To use Gson 
+    compile 'com.github.VictorAlbertos.Jolyglot:gson:0.0.3'
+    
+    // To use Jackson
+    compile 'com.github.VictorAlbertos.Jolyglot:jackson:0.0.3'
+    
+    // To use Moshi
+    compile 'com.github.VictorAlbertos.Jolyglot:moshi:0.0.3'
 }
 ```
-
         
 ```java
 public class SampleApp extends Application {
 
     @Override public void onCreate() {
         super.onCreate();
-        RxSocialConnect.register(this).using(GsonConverter.create());
+        
+        RxSocialConnect.register(this, "myEncryptionKey")
+            .using(new GsonSpeaker());
     }
 }
 ```
@@ -162,7 +170,7 @@ First of all, install RxSocialConnectInterceptors library using gradle:
 
 ```gradle
 dependencies {
-    compile "com.github.FuckBoilerplate.RxSocialConnect-Android:okhttp_interceptors:0.0.7"
+    compile 'com.github.VictorAlbertos.RxSocialConnect-Android:okhttp_interceptors:1.0.0'
 }
 ``` 
 
@@ -220,6 +228,8 @@ Now you are ready to perform any http call against any api in the same way you w
 
 ## Another author's libraries using RxJava:
 * [RxCache](https://github.com/VictorAlbertos/RxCache): Reactive caching library for Android and Java. 
-* [RxGcm](https://github.com/VictorAlbertos/RxGcm): RxJava extension for Gcm which acts as an architectural approach to easily satisfy the requirements of an android app when dealing with push notifications.
+* [Mockery](https://github.com/VictorAlbertos/Mockery): Android and Java library for mocking and testing networking layers with built-in support for Retrofit
+* [RxActivityResult](https://github.com/VictorAlbertos/RxActivityResult): A reactive-tiny-badass-vindictive library to break with the OnActivityResult implementation as it breaks the observables chain.
+* [RxFcm](https://github.com/VictorAlbertos/RxFcm): RxJava extension for Android Firebase Cloud Messaging (aka fcm).
 * [RxPaparazzo](https://github.com/FuckBoilerplate/RxPaparazzo): RxJava extension for Android to take images using camera and gallery.
-* [RxActivityResult](https://github.com/VictorAlbertos/RxActivityResult): A reactive-tiny-badass-vindictive library to break with the OnActivityResult implementation as it breaks the observables chain. 
+ 

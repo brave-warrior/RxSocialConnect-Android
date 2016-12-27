@@ -14,14 +14,27 @@
  * limitations under the License.
  */
 
-package org.fuckboilerplate.rx_social_connect;
+package org.fuckboilerplate.rx_social_connect.query_string;
 
-import java.io.File;
+import android.net.Uri;
+import android.support.annotation.Nullable;
 
 /**
- * Convert from json to object and vice versa.
+ * Use it when some provider does not honor the standard query string formatter.
  */
-public interface JSONConverter {
-    <T> T fromJson(File file, Class<T> clazz) throws Exception;
-    String toJson(Object object);
+public interface QueryStringStrategy {
+  /**
+   * Given an uri, parse the query string to extract the associated oauth code.
+   * @param uri the uri
+   * @return the param code
+   */
+  String extractCode(Uri uri);
+
+  /**
+   * Given an uri, parse the query string to extract the associated error.
+   * @param uri the uri
+   * @return the error message
+   */
+  @Nullable
+  String extractError(Uri uri);
 }

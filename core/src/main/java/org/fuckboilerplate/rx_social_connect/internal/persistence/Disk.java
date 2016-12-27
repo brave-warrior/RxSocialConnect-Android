@@ -18,37 +18,56 @@ package org.fuckboilerplate.rx_social_connect.internal.persistence;
 
 import com.github.scribejava.core.model.Token;
 
-import org.fuckboilerplate.rx_social_connect.JSONConverter;
-import org.fuckboilerplate.rx_social_connect.NotJsonConverterProvided;
+import io.victoralbertos.jolyglot.Jolyglot;
+import org.fuckboilerplate.rx_social_connect.internal.encryption.BuiltInEncryptor;
+import org.fuckboilerplate.rx_social_connect.internal.encryption.FileEncryptor;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 
 import rx.Observable;
 
 public class Disk<T extends Token> {
     private final File cacheDirectory;
     private static final String NAME_DIR = "RxSocialConnect";
-    private final JSONConverter jsonConverter;
+    private final Jolyglot jolyglot;
+    private final String encryptionKey;
+    private final FileEncryptor fileEncryptor;
 
-    public Disk(File file, JSONConverter jsonConverter) {
+    public Disk(File file, String encryptionKey, Jolyglot jolyglot) {
+        this.fileEncryptor = new FileEncryptor(new BuiltInEncryptor());
+        this.encryptionKey = encryptionKey;
         this.cacheDirectory = new File(file + File.separator + NAME_DIR);
         if (!this.cacheDirectory.exists()) cacheDirectory.mkdir();
-        this.jsonConverter = jsonConverter;
-        if (this.jsonConverter == null) throw new NotJsonConverterProvided();
+        this.jolyglot = jolyglot;
     }
 
     public void save(String key, T data) {
-        String wrapperJSONSerialized = jsonConverter.toJson(data);
+        String wrapperJSONSerialized = jolyglot.toJson(data);
+        FileWriter fileWriter = null;
+
         try {
             File file = new File(cacheDirectory, key);
 
-            FileWriter fileWriter = new FileWriter(file, false);
+            fileWriter = new FileWriter(file, false);
             fileWriter.write(wrapperJSONSerialized);
             fileWriter.flush();
             fileWriter.close();
+            fileWriter = null;
+
+            fileEncryptor.encrypt(encryptionKey, new File(cacheDirectory, key));
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
+        } finally {
+            try {
+                if (fileWriter != null) {
+                    fileWriter.flush();
+                    fileWriter.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -69,12 +88,18 @@ public class Disk<T extends Token> {
     }
 
     private T retrieve(String key, Class<T> clazz) {
+        File file = new File(cacheDirectory, key);
+        file = fileEncryptor.decrypt(encryptionKey, file);
+
         try {
-            File file = new File(cacheDirectory, key);
-            T data = jsonConverter.fromJson(file, clazz);
+            T data = jolyglot.fromJson(file, clazz);
+            file.delete();
+
             return data;
         } catch (Exception ignore) {
             return null;
+        } finally {
+            file.delete();
         }
     }
 
